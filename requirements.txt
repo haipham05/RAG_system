@@ -2,3 +2,6 @@ langchain
 pymilvus
 pymupdf
 sentence-transformers
+psycopg2-binary
+fastapi
+uvicorn

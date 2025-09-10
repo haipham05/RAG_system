@@ -18,30 +18,32 @@ def extract(pdf_path: list[str]) -> list[str]:
         extracted_text.append(text)
     return extracted_text
 
-def chunk(text: list[str]) -> list[str]:
+def chunk(text: list[str]) -> list[dict]:
     """
     Chunk the text into chunks of CHUNK_SIZE with CHUNK_OVERLAP.
     """
     section_pattern = r'\n(?=Abstract|Introduction|Conclusion|References|\d+(?:\.\d+)*\s+[A-Z][a-zA-Z\s]+)'
-    sections = re.split(section_pattern, text)
-    
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
 
     final_chunks = []
-    for section in sections:
-        if not section.strip():
-            continue
+    for single_text in text:
+        sections = re.split(section_pattern, single_text)
+        
+        for section in sections:
+            if not section.strip():
+                continue
 
-        lines = section.strip().split('\n')
-        title = lines[0].strip()
-        content = ' '.join(lines[1:]).strip()
+            lines = section.strip().split('\n')
+            title = lines[0].strip()
+            content = ' '.join(lines[1:]).strip()
 
-        if content:
-            sub_chunks = text_splitter.split_text(content)
-            for sub_chunk in sub_chunks:
-                final_chunks.append({
-                    'title': title,
-                    'content' : sub_chunk})
+            if content:
+                sub_chunks = text_splitter.split_text(content)
+                for sub_chunk in sub_chunks:
+                    final_chunks.append({
+                        'title': title,
+                        'content': sub_chunk
+                    })
     return final_chunks
 
 
