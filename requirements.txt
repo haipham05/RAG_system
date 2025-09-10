@@ -1,0 +1,4 @@
+langchain
+pymilvus
+pymupdf
+sentence-transformers
