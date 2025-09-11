@@ -1,7 +1,7 @@
 import os
 import re
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-import pymupdf
+import fitz  # PyMuPDF
 
 CHUNK_SIZE = 500
 CHUNK_OVERLAP = 100
@@ -12,8 +12,8 @@ def extract(pdf_path: list[str]) -> list[str]:
     """
     extracted_text = []
     for path in pdf_path:
-        doc = pymupdf.open(path)
-        text = "".join(page.get_text().encode("utf-8") for page in doc)
+        doc = fitz.open(path)
+        text = "".join(page.get_text() for page in doc)
         doc.close()
         extracted_text.append(text)
     return extracted_text
