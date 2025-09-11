@@ -1,53 +1,22 @@
 version: '3.8'
-
 services:
-  # Container 1: PostgreSQL Database (RDB)
-  postgres:
-    image: postgres:13
+  rdb:
+    image: postgres:15.3-alpine
+    container_name: postgresql_db
     environment:
-      POSTGRES_DB: ragdb
-      POSTGRES_USER: raguser
-      POSTGRES_PASSWORD: ragpass
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
-    networks:
-      - rag_network
+      - ./db_data:/var/lib/postgresql/data
+    ports:
+    - "5432:5432"
+    restart: always
 
-  # Container 2: Milvus Vector Database (with embedded dependencies)
-  milvus:
-    image: milvusdb/milvus:v2.3.0
-    command: ["milvus", "run", "standalone"]
+  vectordb:
+    image: milvusdb/milvus:latest
+    container_name: milvus_db
     environment:
-      ETCD_USE_EMBED: true
-      ETCD_DATA_DIR: /var/lib/milvus/etcd
-      COMMON_STORAGETYPE: local
-    ports:
-      - "19530:19530"
-    volumes:
-      - milvus_data:/var/lib/milvus
-    networks:
-      - rag_network
-
-  # Container 3: RAG API Service (auto-processes PDFs on startup)
-  rag:
-    build: .
-    ports:
-      - "8000:8000"
-    depends_on:
-      - postgres
-      - milvus
-    volumes:
-      - ./data:/app/data
-    networks:
-      - rag_network
-
-volumes:
-  postgres_data:
-  milvus_data:
-
-networks:
-  rag_network:
-    driver: bridge
+  <tên_dịch_vụ_2>:
+    build: . # Xây dựng từ Dockerfile trong thư mục hiện tại
+    ...
