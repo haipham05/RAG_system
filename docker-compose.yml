@@ -1,27 +1,45 @@
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: postgres
-    environment:
-      POSTGRES_USER: raguser
-      POSTGRES_PASSWORD: ragpass
-      POSTGRES_DB: ragdb
-    volumes:
-      - ./db_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+  postgres_db:
+    image: postgres:16-alpine
     restart: unless-stopped
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    container_name: postgres_db
 
-  milvus:
-    image: milvusdb/milvus:v2.4.9
-    container_name: milvus
-    environment:
-      ETCD_USE_EMBED: "true"
-      MINIO_USE_EMBED: "true"
-      MILVUS_LOG_LEVEL: info
-    command: ["milvus", "run", "standalone"]
-    volumes:
-      - ./milvus_data:/var/lib/milvus
-    ports:
-      - "19530:19530"
+  chromadb:
+    image: chromadb/chroma
     restart: unless-stopped
+    volumes:
+      - ./data/chroma:/chroma/chroma
+    ports:
+      - "8000:8000"
+    command: ["uvicorn", "chromadb.server.fastapi_server:app", "--host", "0.0.0.0", "--port", "8000"]
+    container_name: chromadb
+
+  rag_app:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    volumes:
+      - ./src:/app/src
+      - ./data/documents:/app/data/documents  # Mount documents into the container
+    depends_on:
+      - postgres_db
+      - chromadb
+    environment:
+      # Pass database connection details
+      DB_HOST: postgres_db
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      # Pass ChromaDB connection details
+      CHROMA_HOST: chromadb
+      CHROMA_PORT: 8000
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    ports:
+      - "8080:8080"
+    container_name: rag_app

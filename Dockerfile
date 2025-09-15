@@ -1,24 +1,23 @@
-FROM python:3.9-slim
+FROM python:3.11-slim
+
+# Minimal runtime deps for PyMuPDF (fitz)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       libgl1 \
+       libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
+# Install Python dependencies
+COPY src/requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
-# Copy requirements and install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy application source
+COPY src/ /app/src/
 
-# Copy all application code
-COPY . .
+EXPOSE 8080
 
-# Create data directory
-RUN mkdir -p /app/data/pdfs
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8080"]
 
-# Expose port for FastAPI
-EXPOSE 8000
 
-# Startup script that processes PDFs and starts API
-CMD ["python", "startup.py"]
