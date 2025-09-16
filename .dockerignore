@@ -1,18 +1,57 @@
+# Git files
 .git
 .gitignore
+
+# Python cache
 __pycache__
 *.pyc
 *.pyo
 *.pyd
-*.log
-.env
-venv
-.venv
-node_modules
-data/postgres
-data/chroma
-app/__pycache__
-**/.mypy_cache
-**/.pytest_cache
-**/.ruff_cache
+.Python
+*.py[cod]
+*$py.class
 
+# Virtual environments
+.venv
+venv/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker files
+Dockerfile*
+docker-compose*
+
+# Documentation
+README.md
+*.md
+
+# Test files
+test_*.py
+*_test.py
+
+# Data directories (except PDFs we need)
+data/postgres/
+data/chroma/
+
+# Environment files
+.env
+.env.*
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/

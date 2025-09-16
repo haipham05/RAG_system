@@ -5,19 +5,22 @@ services:
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER:-raguser}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-ragpass}
+      POSTGRES_DB: ${DB_NAME:-ragdb}
     container_name: postgres_db
 
   chromadb:
-    image: chromadb/chroma
+    image: chromadb/chroma:0.4.15
     restart: unless-stopped
     volumes:
       - ./data/chroma:/chroma/chroma
     ports:
       - "8000:8000"
-    command: ["uvicorn", "chromadb.server.fastapi_server:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      - IS_PERSISTENT=TRUE
+      - PERSIST_DIRECTORY=/chroma/chroma
+      - ANONYMIZED_TELEMETRY=FALSE
     container_name: chromadb
 
   rag_app:
@@ -26,20 +29,25 @@ services:
       dockerfile: ./Dockerfile
     volumes:
       - ./src:/app/src
-      - ./data/documents:/app/data/documents  # Mount documents into the container
+      - ./data/pdfs:/app/data/pdfs  # Mount PDFs into the container
     depends_on:
       - postgres_db
       - chromadb
     environment:
       # Pass database connection details
       DB_HOST: postgres_db
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER:-raguser}
+      DB_PASSWORD: ${DB_PASSWORD:-ragpass}
+      DB_NAME: ${DB_NAME:-ragdb}
       # Pass ChromaDB connection details
       CHROMA_HOST: chromadb
       CHROMA_PORT: 8000
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      # Pass Gemini API key
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      # Model configuration
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-all-MiniLM-L6-v2}
+      CHUNK_SIZE: ${CHUNK_SIZE:-1000}
+      CHUNK_OVERLAP: ${CHUNK_OVERLAP:-200}
     ports:
       - "8080:8080"
     container_name: rag_app
