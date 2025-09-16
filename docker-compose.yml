@@ -29,22 +29,18 @@ services:
       dockerfile: ./Dockerfile
     volumes:
       - ./src:/app/src
-      - ./data/pdfs:/app/data/pdfs  # Mount PDFs into the container
+      - ./data/pdfs:/app/data/pdfs
     depends_on:
       - postgres_db
       - chromadb
     environment:
-      # Pass database connection details
       DB_HOST: postgres_db
       DB_USER: ${DB_USER:-raguser}
       DB_PASSWORD: ${DB_PASSWORD:-ragpass}
       DB_NAME: ${DB_NAME:-ragdb}
-      # Pass ChromaDB connection details
       CHROMA_HOST: chromadb
       CHROMA_PORT: 8000
-      # Pass Gemini API key
       GEMINI_API_KEY: ${GEMINI_API_KEY}
-      # Model configuration
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-all-MiniLM-L6-v2}
       CHUNK_SIZE: ${CHUNK_SIZE:-1000}
       CHUNK_OVERLAP: ${CHUNK_OVERLAP:-200}

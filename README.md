@@ -41,8 +41,8 @@ The system automatically:
 curl -X POST "http://localhost:8080/query" \
      -H "Content-Type: application/json" \
      -d '{
-       "question": "How does attention mechanism in transformer work?",
-       "top_k": 3
+       "question": "How does attention work?",
+       "top_k": 5
      }'
 ```
 
