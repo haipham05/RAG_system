@@ -59,6 +59,7 @@ def setup_chromadb():
                 try:
                     collection = client.get_collection("document_chunks")
                 except Exception as get_error:
+                    pass  # Collection doesn't exist, will be created later
             else:
                 raise e
         
