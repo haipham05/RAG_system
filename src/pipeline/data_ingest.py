@@ -88,6 +88,76 @@ class PDFProcessor:
         
         return "Content"
     
+    def _detect_all_sections(self, text: str) -> List[str]:
+        sections = []
+        
+        numbered_pattern = r'\b(\d+\s+[A-Z][a-zA-Z\s]+?)(?=\s+[a-z]|\s+[A-Z][a-z]|\s+[A-Z]{2,}|\s+[0-9]|\s+[^\w\s]|$)'
+        numbered_matches = re.findall(numbered_pattern, text)
+        for match in numbered_matches:
+            if len(match.strip()) > 5 and len(match.strip()) < 100:
+                sections.append(match.strip())
+        
+        subsection_pattern = r'\b(\d+\.\d+\s+[A-Z][a-zA-Z\s]+?)(?=\s+[a-z]|\s+[A-Z][a-z]|\s+[A-Z]{2,}|\s+[0-9]|\s+[^\w\s]|$)'
+        subsection_matches = re.findall(subsection_pattern, text)
+        for match in subsection_matches:
+            if len(match.strip()) > 5 and len(match.strip()) < 100:
+                sections.append(match.strip())
+        
+        sections = list(set(sections))
+        sections.sort()
+        
+        return sections
+    
+    def _find_page_for_chunk(self, chunk_text: str, section_pages: List[Dict[str, str]]) -> int:
+        best_page = section_pages[0]["page_num"] if section_pages else 1
+        max_overlap = 0
+        
+        for page_data in section_pages:
+            page_text = page_data["text"]
+            chunk_words = set(chunk_text.lower().split())
+            page_words = set(page_text.lower().split())
+            overlap = len(chunk_words.intersection(page_words))
+            
+            if overlap > max_overlap:
+                max_overlap = overlap
+                best_page = page_data["page_num"]
+        
+        return best_page
+    
+    def _find_section_for_page(self, page_text: str, detected_sections: List[str], current_section: str) -> str:
+        for line in page_text.split('\n'):
+            line = line.strip()
+            if line in detected_sections:
+                return line
+        
+        for section in detected_sections:
+            if section.lower() in page_text.lower():
+                return section
+        
+        return current_section
+
+    def _group_pages_by_section(self, pages_text: List[Dict[str, str]]) -> Dict[str, List[Dict[str, str]]]:
+        sections = {}
+        current_section = "Abstract"
+    
+        all_text = " ".join([page["text"] for page in pages_text])
+        detected_sections = self._detect_all_sections(all_text)
+        
+        for page_data in pages_text:
+            page_text = page_data["text"]
+            page_num = page_data["page_num"]
+            
+            page_section = self._find_section_for_page(page_text, detected_sections, current_section)
+            
+            if page_section != "Content":
+                current_section = page_section
+            
+            if page_section not in sections:
+                sections[page_section] = []
+            sections[page_section].append(page_data)
+        
+        return sections
+
     def chunk_text(self, pages_text: List[Dict[str, str]]) -> List[Dict[str, str]]:
         chunks = []
         chunk_index = 0
@@ -120,90 +190,6 @@ class PDFProcessor:
                     chunk_index += 1
         
         return chunks
-    
-    def _group_pages_by_section(self, pages_text: List[Dict[str, str]]) -> Dict[str, List[Dict[str, str]]]:
-        sections = {}
-        current_section = "Abstract"
-    
-        all_text = " ".join([page["text"] for page in pages_text])
-        detected_sections = self._detect_all_sections(all_text)
-        
-        for page_data in pages_text:
-            page_text = page_data["text"]
-            page_num = page_data["page_num"]
-            
-            page_section = self._find_section_for_page(page_text, detected_sections, current_section)
-            
-            if page_section != "Content":
-                current_section = page_section
-            
-            if page_section not in sections:
-                sections[page_section] = []
-            sections[page_section].append(page_data)
-        
-        return sections
-    
-    def _detect_all_sections(self, text: str) -> List[str]:
-        sections = []
-        
-        numbered_pattern = r'\b(\d+\s+[A-Z][a-zA-Z\s]+?)(?=\s+[a-z]|\s+[A-Z][a-z]|\s+[A-Z]{2,}|\s+[0-9]|\s+[^\w\s]|$)'
-        numbered_matches = re.findall(numbered_pattern, text)
-        for match in numbered_matches:
-            if len(match.strip()) > 5 and len(match.strip()) < 100:
-                sections.append(match.strip())
-        
-        subsection_pattern = r'\b(\d+\.\d+\s+[A-Z][a-zA-Z\s]+?)(?=\s+[a-z]|\s+[A-Z][a-z]|\s+[A-Z]{2,}|\s+[0-9]|\s+[^\w\s]|$)'
-        subsection_matches = re.findall(subsection_pattern, text)
-        for match in subsection_matches:
-            if len(match.strip()) > 5 and len(match.strip()) < 100:
-                sections.append(match.strip())
-        
-        sections = list(set(sections))
-        sections.sort()
-        
-        return sections
-    
-    def _find_section_for_text(self, text: str, detected_sections: List[str]) -> str:
-        lines = text.split('\n')
-        
-        for line in lines[:5]:
-            line = line.strip()
-            if line in detected_sections:
-                return line
-        
-        for section in detected_sections:
-            if section.lower() in text.lower():
-                return section
-        
-        return "Content"
-    
-    def _find_page_for_chunk(self, chunk_text: str, section_pages: List[Dict[str, str]]) -> int:
-        best_page = section_pages[0]["page_num"] if section_pages else 1
-        max_overlap = 0
-        
-        for page_data in section_pages:
-            page_text = page_data["text"]
-            chunk_words = set(chunk_text.lower().split())
-            page_words = set(page_text.lower().split())
-            overlap = len(chunk_words.intersection(page_words))
-            
-            if overlap > max_overlap:
-                max_overlap = overlap
-                best_page = page_data["page_num"]
-        
-        return best_page
-    
-    def _find_section_for_page(self, page_text: str, detected_sections: List[str], current_section: str) -> str:
-        for line in page_text.split('\n'):
-            line = line.strip()
-            if line in detected_sections:
-                return line
-        
-        for section in detected_sections:
-            if section.lower() in page_text.lower():
-                return section
-        
-        return current_section
     
     def process_pdf(self, pdf_path: str) -> Tuple[str, List[Dict[str, str]]]:
         filename = os.path.basename(pdf_path)
